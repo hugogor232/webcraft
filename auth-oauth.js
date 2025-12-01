@@ -1,4 +1,4 @@
-```javascript
+
 import { supabase } from './supabaseClient.js';
 
 /**
@@ -148,4 +148,3 @@ supabase.auth.onAuthStateChange((event, session) => {
         // Optionnel: Gérer la déconnexion globale si nécessaire
     }
 });
-```

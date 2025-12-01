@@ -1,4 +1,4 @@
-```javascript
+
 /*
  * WebCraft AI - script.js
  * Gère les interactions UI non-liées aux données.
@@ -198,4 +198,3 @@ function formatNumber(num) {
     if (typeof num !== 'number') return '';
     return num.toLocaleString('fr-FR');
 }
-```

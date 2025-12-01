@@ -1,4 +1,3 @@
-```sql
 -- WebCraft AI - Supabase Schema
 -- This script defines the complete database structure, including tables,
 -- relationships, row-level security policies, and helper functions.
