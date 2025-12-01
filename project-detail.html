@@ -1,0 +1,259 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détail Projet & Aperçu - WebCraft AI</title>
+    <meta name="description" content="Aperçu en direct, gestion des fichiers et suivi de la génération de votre projet WebCraft AI.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body class="private-page">
+
+    <header class="intranet-nav">
+        <div class="container">
+            <a href="dashboard.html" class="nav-logo">WebCraft AI</a>
+            <nav class="nav-links">
+                <a href="dashboard.html" class="nav-link-back">← Mes Projets</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content" id="project-detail-container">
+        <div class="container">
+            <div id="loading-state" class="loading-spinner"></div>
+            <div id="error-state" class="error-message" style="display: none;"></div>
+
+            <div id="project-content" style="display: none;">
+                <div class="project-header">
+                    <div>
+                        <h1 id="project-name">Chargement du projet...</h1>
+                        <span id="project-status-badge" class="status-badge"></span>
+                    </div>
+                    <div class="project-actions">
+                        <a id="edit-button" href="#" class="btn btn-secondary" style="display: none;">Ouvrir l'éditeur</a>
+                        <a id="deploy-button" href="#" class="btn btn-primary" style="display: none;">Déployer le site</a>
+                    </div>
+                </div>
+
+                <div class="project-layout">
+                    <div class="preview-panel">
+                        <div class="preview-controls">
+                            <button id="desktop-view" class="active" title="Vue ordinateur">🖥️</button>
+                            <button id="tablet-view" title="Vue tablette">📱</button>
+                            <button id="mobile-view" title="Vue mobile">📱</button>
+                        </div>
+                        <div class="preview-wrapper">
+                            <iframe id="preview-iframe" sandbox="allow-scripts allow-same-origin" title="Aperçu du site web"></iframe>
+                        </div>
+                    </div>
+                    <div class="management-panel">
+                        <!-- State 1: Generation in progress -->
+                        <div id="generation-progress-container" class="card" style="display: none;">
+                            <h3>Génération en cours...</h3>
+                            <p>L'IA construit votre site. Vous pouvez suivre sa progression en temps réel.</p>
+                            <progress id="generation-progress-bar" value="0" max="100"></progress>
+                            <span id="progress-text">0%</span>
+                            <div class="logs-container">
+                                <h4>Logs de génération :</h4>
+                                <ul id="generation-logs"></ul>
+                            </div>
+                        </div>
+
+                        <!-- State 2: Generation complete -->
+                        <div id="management-tabs-container" class="card" style="display: none;">
+                            <div class="tabs-nav">
+                                <button class="tab-link active" data-tab="files">Fichiers</button>
+                                <button class="tab-link" data-tab="settings">Paramètres</button>
+                                <button class="tab-link" data-tab="logs">Logs Complets</button>
+                            </div>
+                            <div id="files" class="tab-content active">
+                                <h4>Fichiers du projet</h4>
+                                <ul id="file-list">
+                                    <!-- La liste des fichiers sera injectée ici -->
+                                </ul>
+                            </div>
+                            <div id="settings" class="tab-content">
+                                <h4>Paramètres du projet</h4>
+                                <p>Fonctionnalité de modification des paramètres à venir.</p>
+                            </div>
+                            <div id="logs" class="tab-content">
+                                <h4>Logs de génération complets</h4>
+                                <pre id="final-logs" class="logs-container"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { checkSessionOrRedirect } from './auth-oauth.js';
+
+        const projectId = new URLSearchParams(window.location.search).get('id');
+        const loadingState = document.getElementById('loading-state');
+        const errorState = document.getElementById('error-state');
+        const projectContent = document.getElementById('project-content');
+
+        const projectNameEl = document.getElementById('project-name');
+        const statusBadgeEl = document.getElementById('project-status-badge');
+        const editButton = document.getElementById('edit-button');
+        const deployButton = document.getElementById('deploy-button');
+        const iframe = document.getElementById('preview-iframe');
+        const previewWrapper = document.querySelector('.preview-wrapper');
+
+        const progressContainer = document.getElementById('generation-progress-container');
+        const progressBar = document.getElementById('generation-progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const generationLogsList = document.getElementById('generation-logs');
+
+        const tabsContainer = document.getElementById('management-tabs-container');
+        const fileListEl = document.getElementById('file-list');
+        const finalLogsEl = document.getElementById('final-logs');
+
+        let logSubscription = null;
+        let projectSubscription = null;
+
+        function cleanupSubscriptions() {
+            if (logSubscription) supabase.removeChannel(logSubscription);
+            if (projectSubscription) supabase.removeChannel(projectSubscription);
+        }
+
+        function getStatusBadge(status) {
+            const statusMap = {
+                pending: { text: 'En attente', class: 'status-pending' },
+                generating: { text: 'En cours de génération', class: 'status-pending' },
+                completed: { text: 'Terminé', class: 'status-completed' },
+                failed: { text: 'Échec', class: 'status-failed' },
+                default: { text: status || 'Inconnu', class: 'status-unknown' }
+            };
+            return statusMap[status] || statusMap.default;
+        }
+
+        function updateUIForStatus(project) {
+            const statusInfo = getStatusBadge(project.status);
+            statusBadgeEl.textContent = statusInfo.text;
+            statusBadgeEl.className = `status-badge ${statusInfo.class}`;
+
+            if (project.status === 'pending' || project.status === 'generating') {
+                progressContainer.style.display = 'block';
+                tabsContainer.style.display = 'none';
+                editButton.style.display = 'none';
+                deployButton.style.display = 'none';
+            } else {
+                progressContainer.style.display = 'none';
+                tabsContainer.style.display = 'block';
+                if (project.status === 'completed') {
+                    editButton.style.display = 'inline-block';
+                    deployButton.style.display = 'inline-block';
+                    if (project.preview_url) {
+                        iframe.src = project.preview_url;
+                    } else {
+                        iframe.srcdoc = "<html><body><h1>Aperçu non disponible</h1></body></html>";
+                    }
+                }
+            }
+        }
+
+        async function loadProjectDetails() {
+            if (!projectId) {
+                window.location.href = 'dashboard.html?error=missing_id';
+                return;
+            }
+
+            const { data: project, error } = await supabase
+                .from('projects')
+                .select('*')
+                .eq('id', projectId)
+                .single();
+
+            if (error || !project) {
+                console.error('Error fetching project:', error);
+                loadingState.style.display = 'none';
+                errorState.textContent = "Projet non trouvé ou vous n'avez pas les droits d'accès.";
+                errorState.style.display = 'block';
+                return;
+            }
+
+            loadingState.style.display = 'none';
+            projectContent.style.display = 'block';
+
+            projectNameEl.textContent = project.name;
+            editButton.href = `editor.html?id=${project.id}`;
+            deployButton.href = `deploy-config.html?id=${project.id}`;
+            
+            updateUIForStatus(project);
+            setupRealtimeListeners();
+        }
+
+        function setupRealtimeListeners() {
+            // Listen for new logs
+            logSubscription = supabase
+                .channel(`project_logs_${projectId}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'project_logs',
+                    filter: `project_id=eq.${projectId}`
+                }, payload => {
+                    const log = payload.new;
+                    const li = document.createElement('li');
+                    li.textContent = `[${new Date(log.created_at).toLocaleTimeString()}] ${log.message}`;
+                    generationLogsList.appendChild(li);
+                    generationLogsList.scrollTop = generationLogsList.scrollHeight;
+
+                    if (log.progress) {
+                        progressBar.value = log.progress;
+                        progressText.textContent = `${log.progress}%`;
+                    }
+                })
+                .subscribe();
+
+            // Listen for project status updates
+            projectSubscription = supabase
+                .channel(`project_status_${projectId}`)
+                .on('postgres_changes', {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'projects',
+                    filter: `id=eq.${projectId}`
+                }, payload => {
+                    updateUIForStatus(payload.new);
+                    if (payload.new.status === 'completed' || payload.new.status === 'failed') {
+                        cleanupSubscriptions(); // Stop listening once finished
+                    }
+                })
+                .subscribe();
+        }
+
+        // --- UI Interactions ---
+        document.getElementById('desktop-view').addEventListener('click', () => previewWrapper.style.width = '100%');
+        document.getElementById('tablet-view').addEventListener('click', () => previewWrapper.style.width = '768px');
+        document.getElementById('mobile-view').addEventListener('click', () => previewWrapper.style.width = '375px');
+
+        document.querySelector('.tabs-nav').addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const tabId = e.target.dataset.tab;
+                document.querySelectorAll('.tab-link').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                e.target.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            }
+        });
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await checkSessionOrRedirect();
+            if (!session) return;
+            await loadProjectDetails();
+        });
+
+        window.addEventListener('beforeunload', cleanupSubscriptions);
+    </script>
+    <script type="module" src="auth-oauth.js"></script>
+</body>
+</html>
+```

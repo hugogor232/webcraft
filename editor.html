@@ -1,0 +1,358 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Éditeur de Code - WebCraft AI</title>
+    <meta name="description" content="Éditeur de code en temps réel pour vos projets WebCraft AI.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <style>
+        /* Specific styles for the editor layout */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .editor-page-layout {
+            display: flex;
+            height: calc(100vh - 60px); /* Full height minus header */
+        }
+        .file-sidebar {
+            width: 250px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            overflow-y: auto;
+            border-right: 1px solid #333;
+        }
+        .file-sidebar h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #444;
+            padding-bottom: 0.5rem;
+        }
+        #file-tree {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #file-tree li {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #file-tree li:hover {
+            background-color: #2a2d2e;
+        }
+        #file-tree li.active {
+            background-color: #094771;
+        }
+        .editor-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: #252526;
+            color: #cccccc;
+            border-bottom: 1px solid #333;
+        }
+        #save-status {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        #editor-container {
+            flex-grow: 1;
+            width: 100%;
+        }
+        .intranet-nav .nav-link-back {
+            color: var(--text-color-light);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        .intranet-nav .nav-link-back:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+</head>
+<body class="private-page">
+
+    <header class="intranet-nav">
+        <div class="container">
+            <a href="dashboard.html" class="nav-logo">WebCraft AI</a>
+            <nav class="nav-links">
+                <a id="back-to-project" href="#" class="nav-link-back">← Retour au projet</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="editor-page-layout">
+        <aside class="file-sidebar">
+            <h3>Fichiers du projet</h3>
+            <ul id="file-tree">
+                <!-- File tree will be loaded here -->
+                <li id="file-tree-loader">Chargement...</li>
+            </ul>
+        </aside>
+        <main class="editor-main">
+            <div class="editor-header">
+                <span id="current-file-name">Sélectionnez un fichier pour commencer</span>
+                <span id="save-status"></span>
+            </div>
+            <div id="editor-container"></div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { checkSessionOrRedirect } from './auth-oauth.js';
+
+        const projectId = new URLSearchParams(window.location.search).get('id');
+
+        // --- DOM Elements ---
+        const fileTreeEl = document.getElementById('file-tree');
+        const editorContainer = document.getElementById('editor-container');
+        const currentFileNameEl = document.getElementById('current-file-name');
+        const saveStatusEl = document.getElementById('save-status');
+        const backToProjectLink = document.getElementById('back-to-project');
+
+        // --- State ---
+        let editor;
+        let currentFileId = null;
+        let currentUser = null;
+        let collaborationChannel = null;
+        let collaborators = {};
+        let decorations = [];
+        let isApplyingRemoteChange = false;
+
+        // --- Utility Functions ---
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), delay);
+            };
+        }
+
+        function getLanguageFromPath(path) {
+            const extension = path.split('.').pop();
+            switch (extension) {
+                case 'html': return 'html';
+                case 'css': return 'css';
+                case 'js': return 'javascript';
+                case 'json': return 'json';
+                case 'md': return 'markdown';
+                default: return 'plaintext';
+            }
+        }
+
+        // --- Editor Functions ---
+        async function initializeEditor() {
+            return new Promise(resolve => {
+                require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
+                require(['vs/editor/editor.main'], () => {
+                    editor = monaco.editor.create(editorContainer, {
+                        theme: 'vs-dark',
+                        automaticLayout: true,
+                        value: '// Sélectionnez un fichier dans l\'arborescence pour commencer à coder.',
+                        readOnly: true,
+                    });
+                    
+                    editor.onDidChangeModelContent(debounce(handleContentChange, 1000));
+                    editor.onDidChangeCursorPosition(handleCursorChange);
+
+                    resolve(editor);
+                });
+            });
+        }
+
+        async function loadFileTree() {
+            const { data: files, error } = await supabase
+                .from('project_files')
+                .select('id, name, path')
+                .eq('project_id', projectId)
+                .order('path');
+
+            if (error) {
+                console.error('Error loading file tree:', error);
+                fileTreeEl.innerHTML = '<li>Erreur de chargement</li>';
+                return;
+            }
+
+            if (files.length === 0) {
+                fileTreeEl.innerHTML = '<li>Aucun fichier trouvé</li>';
+                return;
+            }
+
+            fileTreeEl.innerHTML = files.map(file => 
+                `<li data-file-id="${file.id}" data-file-path="${file.path}">${file.name}</li>`
+            ).join('');
+        }
+
+        async function loadFileContent(fileId, filePath) {
+            if (currentFileId === fileId) return;
+
+            currentFileId = fileId;
+            
+            // Update active file in UI
+            document.querySelectorAll('#file-tree li').forEach(li => li.classList.remove('active'));
+            document.querySelector(`li[data-file-id="${fileId}"]`).classList.add('active');
+
+            const { data, error } = await supabase
+                .from('project_files')
+                .select('content')
+                .eq('id', fileId)
+                .single();
+
+            if (error) {
+                console.error('Error loading file content:', error);
+                editor.setValue(`// Erreur lors du chargement de ${filePath}`);
+                return;
+            }
+
+            isApplyingRemoteChange = true;
+            const language = getLanguageFromPath(filePath);
+            const newModel = monaco.editor.createModel(data.content, language);
+            editor.setModel(newModel);
+            editor.updateOptions({ readOnly: false });
+            currentFileNameEl.textContent = filePath;
+            saveStatusEl.textContent = 'À jour';
+            isApplyingRemoteChange = false;
+        }
+
+        async function handleContentChange() {
+            if (!currentFileId || isApplyingRemoteChange) return;
+
+            saveStatusEl.textContent = 'Sauvegarde...';
+            const content = editor.getValue();
+
+            const { error } = await supabase
+                .from('project_files')
+                .update({ content: content })
+                .eq('id', currentFileId);
+
+            if (error) {
+                saveStatusEl.textContent = 'Erreur de sauvegarde';
+                console.error('Save error:', error);
+            } else {
+                saveStatusEl.textContent = 'Sauvegardé';
+            }
+        }
+
+        // --- Collaboration Functions ---
+        function setupCollaborationChannel() {
+            collaborationChannel = supabase.channel(`editor-${projectId}`, {
+                config: {
+                    broadcast: { self: false }
+                }
+            });
+
+            collaborationChannel
+                .on('broadcast', { event: 'cursor' }, ({ payload }) => {
+                    if (payload.userId !== currentUser.id) {
+                        updateCollaboratorCursor(payload);
+                    }
+                })
+                .subscribe();
+        }
+
+        function handleCursorChange(e) {
+            if (!collaborationChannel || !currentUser) return;
+
+            collaborationChannel.send({
+                type: 'broadcast',
+                event: 'cursor',
+                payload: {
+                    userId: currentUser.id,
+                    email: currentUser.email,
+                    position: e.position
+                }
+            });
+        }
+        
+        function updateCollaboratorCursor({ userId, email, position }) {
+            const collaborator = collaborators[userId] || {
+                id: userId,
+                email: email,
+                decoration: null,
+                color: `#${Math.floor(Math.random()*16777215).toString(16)}`
+            };
+
+            const newDecorations = [{
+                range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+                options: {
+                    className: 'collaborator-cursor',
+                    stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+                    afterContentClassName: 'collaborator-cursor-label',
+                    inlineClassName: `collaborator-cursor-line-${userId}`
+                }
+            }];
+            
+            // This is a simplified approach. A full implementation would manage decorations more robustly.
+            // For now, we just apply the new one.
+            decorations = editor.deltaDecorations(decorations, newDecorations);
+
+            // Inject CSS for the cursor color and label
+            let style = document.getElementById(`style-${userId}`);
+            if (!style) {
+                style = document.createElement('style');
+                style.id = `style-${userId}`;
+                document.head.appendChild(style);
+            }
+            style.innerHTML = `
+                .collaborator-cursor-line-${userId} { background-color: ${collaborator.color}33; }
+                .collaborator-cursor-label::after { content: '${email.split('@')[0]}'; background: ${collaborator.color}; color: #fff; padding: 1px 4px; border-radius: 2px; position: absolute; margin-left: 2px; }
+            `;
+            
+            collaborators[userId] = collaborator;
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await checkSessionOrRedirect();
+            if (!session) return;
+            currentUser = session.user;
+
+            if (!projectId) {
+                window.location.href = 'dashboard.html?error=project_not_found';
+                return;
+            }
+            backToProjectLink.href = `project-detail.html?id=${projectId}`;
+
+            await initializeEditor();
+            await loadFileTree();
+            setupCollaborationChannel();
+        });
+
+        fileTreeEl.addEventListener('click', (e) => {
+            if (e.target.tagName === 'LI' && e.target.dataset.fileId) {
+                const fileId = e.target.dataset.fileId;
+                const filePath = e.target.dataset.filePath;
+                loadFileContent(fileId, filePath);
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (collaborationChannel) {
+                supabase.removeChannel(collaborationChannel);
+            }
+        });
+
+    </script>
+    <script type="module" src="auth-oauth.js"></script>
+</body>
+</html>
+```

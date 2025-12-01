@@ -1,0 +1,182 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord Projets - WebCraft AI</title>
+    <meta name="description" content="Gérez tous vos projets de sites web générés par l'IA. Suivez leur statut en temps réel et accédez à l'éditeur de code.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body class="private-page">
+
+    <header class="intranet-nav">
+        <div class="container">
+            <a href="dashboard.html" class="nav-logo">WebCraft AI</a>
+            <nav class="nav-links">
+                <div class="user-info">
+                    <span class="user-email">Chargement...</span>
+                    <div class="user-menu">
+                        <a href="settings.html">Paramètres</a>
+                        <button id="logout-button" class="btn-logout">Déconnexion</button>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1>Mes Projets</h1>
+                <a href="wizard.html" class="btn btn-primary">Créer un nouveau projet</a>
+            </div>
+
+            <div id="projects-list" class="projects-grid">
+                <!-- Le contenu sera injecté par JavaScript -->
+                <div class="card placeholder-card"></div>
+                <div class="card placeholder-card"></div>
+                <div class="card placeholder-card"></div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { checkSessionOrRedirect, displayUserInfo, handleLogout } from './auth-oauth.js';
+
+        const projectsListContainer = document.getElementById('projects-list');
+        const logoutButton = document.getElementById('logout-button');
+
+        // --- Helper Functions ---
+
+        function formatDate(isoString) {
+            if (!isoString) return 'Date inconnue';
+            return new Date(isoString).toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
+        function getStatusBadge(status) {
+            const statusMap = {
+                pending: { text: 'En cours de génération', class: 'status-pending' },
+                completed: { text: 'Terminé', class: 'status-completed' },
+                failed: { text: 'Échec', class: 'status-failed' },
+                default: { text: status || 'Inconnu', class: 'status-unknown' }
+            };
+            const { text, class: statusClass } = statusMap[status] || statusMap.default;
+            return `<span class="status-badge ${statusClass}">${text}</span>`;
+        }
+
+        function createProjectCardHTML(project) {
+            return `
+                <div class="card project-card" data-project-id="${project.id}">
+                    <div class="project-card-header">
+                        <h3>${project.name || 'Projet sans nom'}</h3>
+                        ${getStatusBadge(project.status)}
+                    </div>
+                    <p class="project-card-description">${project.description || 'Aucune description fournie.'}</p>
+                    <div class="project-card-footer">
+                        <span class="creation-date">Créé le ${formatDate(project.created_at)}</span>
+                        <a href="project-detail.html?id=${project.id}" class="btn btn-secondary">Gérer le projet</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- Core Logic ---
+
+        async function fetchAndRenderProjects() {
+            projectsListContainer.innerHTML = '<div class="loading-spinner"></div>';
+
+            const { data: projects, error } = await supabase
+                .from('projects')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Erreur lors de la récupération des projets:', error);
+                projectsListContainer.innerHTML = `<p class="error-message">Impossible de charger vos projets. Veuillez réessayer.</p>`;
+                return;
+            }
+
+            if (!projects || projects.length === 0) {
+                projectsListContainer.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Vous n'avez encore aucun projet.</h3>
+                        <p>Commencez par créer votre premier site web avec notre assistant intelligent.</p>
+                        <a href="wizard.html" class="btn btn-primary">Lancer mon premier projet</a>
+                    </div>
+                `;
+                return;
+            }
+
+            projectsListContainer.innerHTML = projects.map(createProjectCardHTML).join('');
+        }
+
+        function setupRealtimeListener() {
+            const channel = supabase
+                .channel('public:projects')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'projects' },
+                    (payload) => {
+                        console.log('Changement détecté:', payload);
+                        const projectCard = document.querySelector(`[data-project-id="${payload.new.id}"]`);
+                        
+                        if (payload.eventType === 'UPDATE' && projectCard) {
+                            // Mettre à jour la carte existante
+                            const statusBadge = projectCard.querySelector('.status-badge');
+                            const newBadge = getStatusBadge(payload.new.status);
+                            if (statusBadge) {
+                                statusBadge.outerHTML = newBadge;
+                            }
+                            // Animer la carte pour attirer l'attention
+                            projectCard.classList.add('card-updated');
+                            setTimeout(() => projectCard.classList.remove('card-updated'), 1500);
+                        } else if (payload.eventType === 'INSERT') {
+                            // Ajouter une nouvelle carte au début de la liste
+                            const newCardHTML = createProjectCardHTML(payload.new);
+                            // Si l'état vide est affiché, le remplacer
+                            const emptyState = projectsListContainer.querySelector('.empty-state');
+                            if (emptyState) {
+                                projectsListContainer.innerHTML = newCardHTML;
+                            } else {
+                                projectsListContainer.insertAdjacentHTML('afterbegin', newCardHTML);
+                            }
+                        } else if (payload.eventType === 'DELETE') {
+                            if (projectCard) {
+                                projectCard.remove();
+                            }
+                        }
+                    }
+                )
+                .subscribe();
+            
+            // Nettoyer l'abonnement en quittant la page
+            window.addEventListener('beforeunload', () => {
+                supabase.removeChannel(channel);
+            });
+        }
+
+        // --- Initialization ---
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await checkSessionOrRedirect();
+            if (!session) return; // Arrête l'exécution si la redirection est en cours
+
+            displayUserInfo(session);
+            logoutButton.addEventListener('click', handleLogout);
+
+            await fetchAndRenderProjects();
+            setupRealtimeListener();
+        });
+    </script>
+    <script type="module" src="auth-oauth.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+```

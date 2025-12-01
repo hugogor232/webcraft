@@ -1,0 +1,326 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créateur de Site (5 Étapes) - WebCraft AI</title>
+    <meta name="description" content="Assistant de création de projet. Décrivez votre site idéal en 5 étapes et laissez notre IA le construire pour vous.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body class="private-page">
+
+    <header class="intranet-nav">
+        <div class="container">
+            <a href="dashboard.html" class="nav-logo">WebCraft AI</a>
+            <nav class="nav-links">
+                <a href="dashboard.html" class="nav-link-back">← Retour au tableau de bord</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="wizard-container">
+                <h1>Assistant de Création de Site</h1>
+                <p>Suivez ces 5 étapes pour fournir à notre IA toutes les informations nécessaires à la création de votre site.</p>
+
+                <div class="progress-bar">
+                    <div class="step-indicator active" data-step="1"><span>1</span> Infos de base</div>
+                    <div class="step-indicator" data-step="2"><span>2</span> Type de site</div>
+                    <div class="step-indicator" data-step="3"><span>3</span> Style & Tonalité</div>
+                    <div class="step-indicator" data-step="4"><span>4</span> Contenu</div>
+                    <div class="step-indicator" data-step="5"><span>5</span> Lancement</div>
+                </div>
+
+                <form id="wizard-form" novalidate>
+                    <!-- Étape 1: Informations de base -->
+                    <div class="wizard-step active" data-step="1">
+                        <h2>Étape 1: Informations de base</h2>
+                        <div class="form-group">
+                            <label for="project-name">Nom du projet</label>
+                            <input type="text" id="project-name" name="projectName" placeholder="Ex: Mon Portfolio de Photographie" required>
+                            <small>Ce nom sera utilisé pour identifier votre projet dans le tableau de bord.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="project-description">Description courte de votre activité</label>
+                            <textarea id="project-description" name="projectDescription" rows="4" placeholder="Ex: Je suis un photographe spécialisé dans les portraits et les paysages, basé à Paris." required></textarea>
+                            <small>Décrivez en une ou deux phrases ce que vous faites. L'IA l'utilisera pour la page d'accueil.</small>
+                        </div>
+                    </div>
+
+                    <!-- Étape 2: Type de site -->
+                    <div class="wizard-step" data-step="2">
+                        <h2>Étape 2: Quel type de site souhaitez-vous créer ?</h2>
+                        <div class="form-group-radio-grid">
+                            <label class="radio-card">
+                                <input type="radio" name="siteType" value="portfolio" required>
+                                <span>Portfolio</span>
+                                <small>Pour présenter vos travaux, projets ou créations.</small>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="siteType" value="blog">
+                                <span>Blog</span>
+                                <small>Pour publier des articles, des actualités ou des tutoriels.</small>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="siteType" value="ecommerce">
+                                <span>E-commerce</span>
+                                <small>Pour vendre des produits ou services en ligne.</small>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="siteType" value="business">
+                                <span>Site Vitrine</span>
+                                <small>Pour présenter une entreprise, une agence ou un service.</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Étape 3: Style & Tonalité -->
+                    <div class="wizard-step" data-step="3">
+                        <h2>Étape 3: Quel style visuel et quelle tonalité préférez-vous ?</h2>
+                        <div class="form-group">
+                            <label>Style Visuel (choisissez jusqu'à 3 mots-clés)</label>
+                            <div class="checkbox-grid">
+                                <label class="checkbox-card"><input type="checkbox" name="visualStyle" value="moderne"> Moderne</label>
+                                <label class="checkbox-card"><input type="checkbox" name="visualStyle" value="minimaliste"> Minimaliste</label>
+                                <label class="checkbox-card"><input type="checkbox" name="visualStyle" value="professionnel"> Professionnel</label>
+                                <label class="checkbox-card"><input type="checkbox" name="visualStyle" value="creatif"> Créatif</label>
+                                <label class="checkbox-card"><input type="checkbox" name="visualStyle" value="sombre"> Sombre</label>
+                                <label class="checkbox-card"><input type="checkbox" name="visualStyle" value="lumineux"> Lumineux</label>
+                                <label class="checkbox-card"><input type="checkbox" name="visualStyle" value="elegant"> Élégant</label>
+                                <label class="checkbox-card"><input type="checkbox" name="visualStyle" value="ludique"> Ludique</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="brand-colors">Couleurs principales (optionnel)</label>
+                            <input type="text" id="brand-colors" name="brandColors" placeholder="Ex: bleu marine, or, blanc cassé">
+                            <small>Indiquez les couleurs de votre marque si vous en avez.</small>
+                        </div>
+                    </div>
+
+                    <!-- Étape 4: Contenu -->
+                    <div class="wizard-step" data-step="4">
+                        <h2>Étape 4: Décrivez le contenu de votre site</h2>
+                        <div class="form-group">
+                            <label for="site-content">Brief détaillé pour l'IA</label>
+                            <textarea id="site-content" name="siteContent" rows="10" placeholder="Soyez aussi précis que possible. Listez les pages que vous voulez (ex: Accueil, À Propos, Mes Services, Contact). Pour chaque page, décrivez le contenu. Ex: Sur la page 'Mes Services', je veux 3 blocs pour 'Photographie de mariage', 'Portraits en studio', 'Reportages d'entreprise'..." required></textarea>
+                            <small>Plus vous donnez de détails, meilleur sera le résultat.</small>
+                        </div>
+                    </div>
+
+                    <!-- Étape 5: Récapitulatif et Lancement -->
+                    <div class="wizard-step" data-step="5">
+                        <h2>Étape 5: Récapitulatif et Lancement</h2>
+                        <p>Veuillez vérifier les informations avant de lancer la génération.</p>
+                        <div id="summary-container" class="summary-card">
+                            <!-- Le récapitulatif sera injecté ici -->
+                        </div>
+                        <div id="wizard-message" class="message" aria-live="polite"></div>
+                    </div>
+                </form>
+
+                <div class="wizard-nav">
+                    <button id="prev-btn" class="btn btn-secondary" style="display: none;">Précédent</button>
+                    <button id="next-btn" class="btn btn-primary">Suivant</button>
+                    <button id="submit-btn" class="btn btn-primary" style="display: none;">Lancer la génération IA</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { checkSessionOrRedirect } from './auth-oauth.js';
+
+        // --- CONFIGURATION ---
+        const N8N_WEBHOOK_URL = 'YOUR_N8N_WEBHOOK_URL'; // IMPORTANT: Remplacez par votre URL de webhook n8n
+
+        // --- STATE ---
+        let currentStep = 1;
+        const totalSteps = 5;
+        const formData = {};
+        let currentUser = null;
+
+        // --- DOM ELEMENTS ---
+        const form = document.getElementById('wizard-form');
+        const steps = document.querySelectorAll('.wizard-step');
+        const indicators = document.querySelectorAll('.step-indicator');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const messageDiv = document.getElementById('wizard-message');
+
+        // --- FUNCTIONS ---
+
+        function showStep(stepNumber) {
+            steps.forEach(step => step.classList.remove('active'));
+            document.querySelector(`.wizard-step[data-step="${stepNumber}"]`).classList.add('active');
+
+            indicators.forEach(indicator => {
+                const indicatorStep = parseInt(indicator.dataset.step, 10);
+                if (indicatorStep < stepNumber) {
+                    indicator.classList.add('completed');
+                    indicator.classList.remove('active');
+                } else if (indicatorStep === stepNumber) {
+                    indicator.classList.add('active');
+                    indicator.classList.remove('completed');
+                } else {
+                    indicator.classList.remove('active', 'completed');
+                }
+            });
+
+            prevBtn.style.display = stepNumber > 1 ? 'inline-block' : 'none';
+            nextBtn.style.display = stepNumber < totalSteps ? 'inline-block' : 'none';
+            submitBtn.style.display = stepNumber === totalSteps ? 'inline-block' : 'none';
+
+            if (stepNumber === totalSteps) {
+                populateSummary();
+            }
+        }
+
+        function validateStep(stepNumber) {
+            const currentStepElement = document.querySelector(`.wizard-step[data-step="${stepNumber}"]`);
+            const inputs = currentStepElement.querySelectorAll('input[required], textarea[required]');
+            let isValid = true;
+
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    input.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+            
+            if (stepNumber === 2) { // Radio buttons validation
+                const radio = currentStepElement.querySelector('input[name="siteType"]:checked');
+                if (!radio) {
+                    isValid = false;
+                    alert("Veuillez sélectionner un type de site.");
+                }
+            }
+
+            return isValid;
+        }
+
+        function collectStepData() {
+            const activeStep = document.querySelector('.wizard-step.active');
+            const inputs = activeStep.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                if (input.type === 'radio') {
+                    if (input.checked) formData[input.name] = input.value;
+                } else if (input.type === 'checkbox') {
+                    if (!formData[input.name]) formData[input.name] = [];
+                    if (input.checked) {
+                        formData[input.name].push(input.value);
+                    } else {
+                        formData[input.name] = formData[input.name].filter(v => v !== input.value);
+                    }
+                } else {
+                    formData[input.name] = input.value;
+                }
+            });
+        }
+
+        function populateSummary() {
+            const summaryContainer = document.getElementById('summary-container');
+            summaryContainer.innerHTML = `
+                <h4>Récapitulatif du Projet</h4>
+                <ul>
+                    <li><strong>Nom:</strong> ${formData.projectName || 'Non défini'}</li>
+                    <li><strong>Description:</strong> ${formData.projectDescription || 'Non défini'}</li>
+                    <li><strong>Type de site:</strong> ${formData.siteType || 'Non défini'}</li>
+                    <li><strong>Style visuel:</strong> ${(formData.visualStyle || []).join(', ') || 'Non défini'}</li>
+                    <li><strong>Couleurs:</strong> ${formData.brandColors || 'Par défaut'}</li>
+                </ul>
+                <h5>Brief pour l'IA:</h5>
+                <p class="summary-brief">${formData.siteContent || 'Non défini'}</p>
+            `;
+        }
+
+        async function handleFinalSubmit() {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Génération en cours...';
+            messageDiv.textContent = '';
+            messageDiv.className = 'message info-message';
+
+            try {
+                // 1. Créer l'entrée dans la table 'projects'
+                messageDiv.textContent = 'Étape 1/2: Initialisation du projet dans la base de données...';
+                const { data: newProject, error: insertError } = await supabase
+                    .from('projects')
+                    .insert({
+                        user_id: currentUser.id,
+                        name: formData.projectName,
+                        description: formData.projectDescription,
+                        status: 'pending',
+                        wizard_data: formData // Stocker toutes les données du wizard
+                    })
+                    .select()
+                    .single();
+
+                if (insertError) throw new Error(`Erreur Supabase: ${insertError.message}`);
+
+                // 2. Déclencher le webhook n8n pour la génération IA
+                messageDiv.textContent = 'Étape 2/2: Lancement du processus de génération IA...';
+                const webhookPayload = {
+                    projectId: newProject.id,
+                    userId: currentUser.id,
+                    ...formData
+                };
+
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(webhookPayload)
+                });
+
+                if (!response.ok) throw new Error('Le service de génération IA n\'a pas pu être contacté.');
+
+                // 3. Rediriger vers la page de détail du projet
+                messageDiv.textContent = 'Initialisation réussie ! Redirection...';
+                messageDiv.classList.replace('info-message', 'success-message');
+
+                window.location.href = `project-detail.html?id=${newProject.id}`;
+
+            } catch (error) {
+                console.error('Erreur lors de la soumission du wizard:', error);
+                messageDiv.textContent = `Une erreur est survenue: ${error.message}`;
+                messageDiv.classList.replace('info-message', 'error-message');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Lancer la génération IA';
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+
+        nextBtn.addEventListener('click', () => {
+            if (validateStep(currentStep)) {
+                collectStepData();
+                currentStep++;
+                showStep(currentStep);
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            currentStep--;
+            showStep(currentStep);
+        });
+
+        submitBtn.addEventListener('click', handleFinalSubmit);
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await checkSessionOrRedirect();
+            if (!session) return;
+            currentUser = session.user;
+            showStep(currentStep);
+        });
+
+    </script>
+    <script type="module" src="auth-oauth.js"></script>
+</body>
+</html>
+```

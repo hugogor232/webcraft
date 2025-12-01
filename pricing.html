@@ -1,0 +1,204 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarifs & Plans - WebCraft AI</title>
+    <meta name="description" content="Découvrez nos plans tarifaires flexibles, conçus pour les individus, les professionnels et les entreprises. Commencez gratuitement dès aujourd'hui.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+
+    <header class="main-nav">
+        <div class="container">
+            <a href="index.html" class="nav-logo">WebCraft AI</a>
+            <nav class="nav-links">
+                <ul>
+                    <li><a href="how-it-works.html">Comment ça marche ?</a></li>
+                    <li><a href="templates.html">Templates</a></li>
+                    <li><a href="pricing.html">Tarifs</a></li>
+                    <li><a href="login.html" class="nav-login">Connexion</a></li>
+                </ul>
+                <a href="register.html" class="btn btn-secondary nav-cta">S'inscrire</a>
+            </nav>
+            <button class="burger-menu" aria-label="Ouvrir le menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">Des plans pour chaque ambition</h1>
+                    <p class="hero-subtitle">
+                        Que vous lanciez votre premier site ou que vous gériez plusieurs projets clients, nous avons un plan adapté à vos besoins. Simple, transparent et puissant.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pricing-section">
+            <div class="container">
+                <div class="pricing-grid">
+                    <!-- Plan Gratuit -->
+                    <div class="card pricing-card">
+                        <div class="pricing-header">
+                            <h3>Gratuit</h3>
+                            <p class="price">0€<span>/toujours</span></p>
+                        </div>
+                        <div class="pricing-body">
+                            <p>Idéal pour découvrir la plateforme et pour les projets personnels.</p>
+                            <ul class="features-list">
+                                <li>✓ 1 Projet actif</li>
+                                <li>✓ Génération IA standard</li>
+                                <li>✓ Éditeur de code basique</li>
+                                <li>✓ Déploiement avec sous-domaine</li>
+                                <li>✗ Support communautaire</li>
+                            </ul>
+                        </div>
+                        <div class="pricing-footer">
+                            <a href="register.html" class="btn btn-secondary" data-plan-id="plan_free">Commencer</a>
+                        </div>
+                    </div>
+
+                    <!-- Plan Pro (Recommandé) -->
+                    <div class="card pricing-card recommended">
+                        <div class="pricing-header">
+                            <h3>Pro</h3>
+                            <p class="price">19€<span>/mois</span></p>
+                        </div>
+                        <div class="pricing-body">
+                            <p>Pour les freelances et les professionnels qui veulent plus de puissance.</p>
+                            <ul class="features-list">
+                                <li>✓ 10 Projets actifs</li>
+                                <li>✓ Génération IA avancée</li>
+                                <li>✓ Éditeur de code collaboratif</li>
+                                <li>✓ Déploiement sur domaine personnalisé</li>
+                                <li>✓ Support prioritaire par email</li>
+                            </ul>
+                        </div>
+                        <div class="pricing-footer">
+                            <a href="register.html" class="btn btn-primary" data-plan-id="plan_pro">Choisir le plan Pro</a>
+                        </div>
+                    </div>
+
+                    <!-- Plan Entreprise -->
+                    <div class="card pricing-card">
+                        <div class="pricing-header">
+                            <h3>Entreprise</h3>
+                            <p class="price">Sur devis</p>
+                        </div>
+                        <div class="pricing-body">
+                            <p>Pour les agences et les équipes avec des besoins spécifiques.</p>
+                            <ul class="features-list">
+                                <li>✓ Projets illimités</li>
+                                <li>✓ Modèles d'IA personnalisés</li>
+                                <li>✓ Intégrations sur mesure (API)</li>
+                                <li>✓ Sécurité et conformité avancées</li>
+                                <li>✓ Support dédié (SLA)</li>
+                            </ul>
+                        </div>
+                        <div class="pricing-footer">
+                            <a href="contact.html" class="btn btn-secondary" data-plan-id="plan_enterprise">Nous contacter</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-column">
+                    <h4>WebCraft AI</h4>
+                    <p>Créateur de sites web intelligent. <br>De l'idée au code, plus rapidement.</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="how-it-works.html">Comment ça marche ?</a></li>
+                        <li><a href="templates.html">Templates</a></li>
+                        <li><a href="pricing.html">Tarifs</a></li>
+                        <li><a href="login.html">Se connecter</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Légal</h4>
+                    <ul>
+                        <li><a href="#">Politique de confidentialité</a></li>
+                        <li><a href="#">Conditions d'utilisation</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 WebCraft AI. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+
+        const planButtons = document.querySelectorAll('[data-plan-id]');
+
+        async function updateUserPricingView() {
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!session) {
+                // L'utilisateur n'est pas connecté, les liens par défaut pointent vers register.html
+                return;
+            }
+
+            // L'utilisateur est connecté, vérifions son abonnement
+            const { data: subscription, error } = await supabase
+                .from('subscriptions')
+                .select('status, plan_id')
+                .eq('user_id', session.user.id)
+                .in('status', ['active', 'trialing'])
+                .single();
+
+            if (error && error.code !== 'PGRST116') { // PGRST116 = 0 rows
+                console.error("Erreur lors de la récupération de l'abonnement:", error);
+                return;
+            }
+
+            const currentPlanId = subscription ? subscription.plan_id : null;
+
+            planButtons.forEach(button => {
+                const buttonPlanId = button.dataset.planId;
+                
+                // Cas spécial pour le plan Entreprise qui est un lien de contact
+                if (buttonPlanId === 'plan_enterprise') return;
+
+                if (currentPlanId) {
+                    // L'utilisateur a un abonnement actif
+                    if (buttonPlanId === currentPlanId) {
+                        button.textContent = 'Plan Actuel';
+                        button.classList.add('btn-disabled');
+                        button.href = 'billing.html';
+                    } else {
+                        button.textContent = 'Changer de plan';
+                        button.href = `billing.html?plan=${buttonPlanId}`;
+                    }
+                } else {
+                    // L'utilisateur est connecté mais n'a pas d'abonnement
+                    button.textContent = 'Choisir ce plan';
+                    button.href = `billing.html?plan=${buttonPlanId}`;
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', updateUserPricingView);
+    </script>
+    <script type="module" src="supabaseClient.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+```

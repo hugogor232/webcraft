@@ -1,0 +1,164 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bibliothèque de Templates - WebCraft AI</title>
+    <meta name="description" content="Choisissez un template de site web professionnel pour démarrer votre projet. WebCraft AI l'adaptera ensuite à vos besoins.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+
+    <header class="main-nav">
+        <div class="container">
+            <a href="index.html" class="nav-logo">WebCraft AI</a>
+            <nav class="nav-links">
+                <ul>
+                    <li><a href="how-it-works.html">Comment ça marche ?</a></li>
+                    <li><a href="templates.html">Templates</a></li>
+                    <li><a href="login.html" class="nav-login">Connexion</a></li>
+                </ul>
+                <a href="register.html" class="btn btn-secondary nav-cta">S'inscrire</a>
+            </nav>
+            <button class="burger-menu" aria-label="Ouvrir le menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">Bibliothèque de Templates</h1>
+                    <p class="hero-subtitle">
+                        Un point de départ pour votre vision. Chaque template est une base solide, conçue pour être entièrement personnalisée par notre IA selon vos instructions.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="templates-section">
+            <div class="container">
+                <div id="templates-grid" class="templates-grid">
+                    <!-- Les templates seront injectés ici par JavaScript -->
+                    <div class="card placeholder-card"></div>
+                    <div class="card placeholder-card"></div>
+                    <div class="card placeholder-card"></div>
+                    <div class="card placeholder-card"></div>
+                    <div class="card placeholder-card"></div>
+                    <div class="card placeholder-card"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-column">
+                    <h4>WebCraft AI</h4>
+                    <p>Créateur de sites web intelligent. <br>De l'idée au code, plus rapidement.</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="how-it-works.html">Comment ça marche ?</a></li>
+                        <li><a href="templates.html">Templates</a></li>
+                        <li><a href="register.html">Créer un compte</a></li>
+                        <li><a href="login.html">Se connecter</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Légal</h4>
+                    <ul>
+                        <li><a href="#">Politique de confidentialité</a></li>
+                        <li><a href="#">Conditions d'utilisation</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 WebCraft AI. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+
+        const templatesGrid = document.getElementById('templates-grid');
+        let currentUserSession = null;
+
+        function createTemplateCardHTML(template) {
+            const tagsHTML = (template.tags || []).map(tag => `<span class="tag">${tag}</span>`).join(' ');
+            return `
+                <div class="card template-card">
+                    <img src="${template.preview_image_url || 'https://via.placeholder.com/400x250.png?text=Aperçu'}" alt="Aperçu du template ${template.name}" class="template-card-img">
+                    <div class="template-card-body">
+                        <h3>${template.name}</h3>
+                        <p>${template.description}</p>
+                        <div class="template-tags">
+                            ${tagsHTML}
+                        </div>
+                    </div>
+                    <div class="template-card-footer">
+                        <a href="preview-template.html?id=${template.id}" class="btn btn-secondary">Aperçu</a>
+                        <button class="btn btn-primary use-template-btn" data-template-id="${template.id}">Utiliser ce template</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadTemplates() {
+            const { data: templates, error } = await supabase
+                .from('templates')
+                .select('*')
+                .order('name');
+
+            if (error) {
+                console.error('Erreur lors du chargement des templates:', error);
+                templatesGrid.innerHTML = '<p class="error-message">Impossible de charger les templates pour le moment.</p>';
+                return;
+            }
+
+            if (templates && templates.length > 0) {
+                templatesGrid.innerHTML = templates.map(createTemplateCardHTML).join('');
+            } else {
+                templatesGrid.innerHTML = '<p>Aucun template disponible pour le moment.</p>';
+            }
+        }
+
+        function setupEventListeners() {
+            templatesGrid.addEventListener('click', (event) => {
+                const button = event.target.closest('.use-template-btn');
+                if (!button) return;
+
+                const templateId = button.dataset.templateId;
+                if (currentUserSession) {
+                    // Si l'utilisateur est connecté, rediriger vers le wizard avec le template pré-sélectionné
+                    window.location.href = `wizard.html?template_id=${templateId}`;
+                } else {
+                    // Si non connecté, rediriger vers la page d'inscription
+                    window.location.href = 'register.html';
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Vérifier l'état de la session au chargement de la page
+            const { data: { session } } = await supabase.auth.getSession();
+            currentUserSession = session;
+
+            await loadTemplates();
+            setupEventListeners();
+        });
+    </script>
+    <script type="module" src="supabaseClient.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+```

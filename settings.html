@@ -1,0 +1,282 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramètres & Facturation - WebCraft AI</title>
+    <meta name="description" content="Gérez votre profil, votre abonnement, vos factures et vos clés API pour WebCraft AI.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body class="private-page">
+
+    <header class="intranet-nav">
+        <div class="container">
+            <a href="dashboard.html" class="nav-logo">WebCraft AI</a>
+            <nav class="nav-links">
+                <a href="dashboard.html" class="nav-link-back">← Retour au tableau de bord</a>
+                <div class="user-info">
+                    <span class="user-email">Chargement...</span>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <h1>Paramètres du compte</h1>
+
+            <div class="settings-layout">
+                <aside class="settings-nav">
+                    <ul>
+                        <li><a href="#profile" class="active">Profil</a></li>
+                        <li><a href="#subscription">Abonnement & Facturation</a></li>
+                        <li><a href="#api-keys">Clés API</a></li>
+                        <li><a href="#webhooks">Webhooks</a></li>
+                        <li><a href="#security">Sécurité</a></li>
+                    </ul>
+                </aside>
+
+                <div class="settings-content">
+                    <!-- Section Profil -->
+                    <section id="profile" class="card settings-card">
+                        <h2>Profil</h2>
+                        <form id="profile-form">
+                            <div id="profile-message" class="message" aria-live="polite"></div>
+                            <div class="form-group">
+                                <label for="email">Adresse e-mail</label>
+                                <input type="email" id="email" name="email" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label for="full-name">Nom complet</label>
+                                <input type="text" id="full-name" name="fullName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="avatar-url">URL de l'avatar</label>
+                                <input type="url" id="avatar-url" name="avatarUrl" placeholder="https://...">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Mettre à jour le profil</button>
+                        </form>
+                    </section>
+
+                    <!-- Section Abonnement & Facturation -->
+                    <section id="subscription" class="card settings-card">
+                        <h2>Abonnement & Facturation</h2>
+                        <div id="subscription-info">
+                            <p>Plan actuel : <strong id="current-plan">Chargement...</strong></p>
+                            <p>Statut : <strong id="subscription-status">Chargement...</strong></p>
+                            <button id="manage-subscription-btn" class="btn btn-secondary">Gérer mon abonnement</button>
+                        </div>
+                        <hr>
+                        <h3>Historique des factures</h3>
+                        <table id="invoices-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Montant</th>
+                                    <th>Statut</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoices-list">
+                                <!-- Les factures seront injectées ici -->
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <!-- Section Clés API -->
+                    <section id="api-keys" class="card settings-card">
+                        <h2>Clés API</h2>
+                        <p>Utilisez ces clés pour interagir avec l'API de WebCraft AI.</p>
+                        <div id="new-api-key-message" class="message success-message" style="display:none;"></div>
+                        <button id="generate-api-key-btn" class="btn btn-primary">Générer une nouvelle clé</button>
+                        <table id="api-keys-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Clé (préfixe)</th>
+                                    <th>Créée le</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="api-keys-list">
+                                <!-- Les clés API seront injectées ici -->
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <!-- Section Webhooks -->
+                    <section id="webhooks" class="card settings-card">
+                        <h2>Webhooks sortants</h2>
+                        <p>Recevez des notifications en temps réel sur les événements de vos projets.</p>
+                        <button class="btn btn-primary" disabled>Créer un Webhook (Bientôt disponible)</button>
+                    </section>
+                    
+                    <!-- Section Sécurité -->
+                    <section id="security" class="card settings-card">
+                        <h2>Sécurité</h2>
+                        <form id="password-form">
+                             <div id="password-message" class="message" aria-live="polite"></div>
+                            <div class="form-group">
+                                <label for="new-password">Nouveau mot de passe</label>
+                                <input type="password" id="new-password" name="newPassword" minlength="8" required>
+                            </div>
+                            <button type="submit" class="btn btn-secondary">Changer le mot de passe</button>
+                        </form>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { checkSessionOrRedirect, displayUserInfo } from './auth-oauth.js';
+
+        let currentUser = null;
+
+        // --- DOM Elements ---
+        const profileForm = document.getElementById('profile-form');
+        const profileMessage = document.getElementById('profile-message');
+        const passwordForm = document.getElementById('password-form');
+        const passwordMessage = document.getElementById('password-message');
+        const manageSubscriptionBtn = document.getElementById('manage-subscription-btn');
+
+        // --- Helper Functions ---
+        function showMessage(element, text, isError = false) {
+            element.textContent = text;
+            element.className = `message ${isError ? 'error-message' : 'success-message'}`;
+            setTimeout(() => { element.textContent = ''; }, 5000);
+        }
+
+        // --- Profile Management ---
+        async function loadProfile() {
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('full_name, avatar_url')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (error) {
+                console.error('Error loading profile:', error);
+                return;
+            }
+
+            document.getElementById('email').value = currentUser.email;
+            document.getElementById('full-name').value = profile.full_name || '';
+            document.getElementById('avatar-url').value = profile.avatar_url || '';
+        }
+
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = e.target.querySelector('button');
+            button.disabled = true;
+            button.textContent = 'Mise à jour...';
+
+            const fullName = document.getElementById('full-name').value;
+            const avatarUrl = document.getElementById('avatar-url').value;
+
+            const { error } = await supabase
+                .from('profiles')
+                .update({ full_name: fullName, avatar_url: avatarUrl })
+                .eq('id', currentUser.id);
+
+            if (error) {
+                showMessage(profileMessage, `Erreur: ${error.message}`, true);
+            } else {
+                showMessage(profileMessage, 'Profil mis à jour avec succès !');
+            }
+            button.disabled = false;
+            button.textContent = 'Mettre à jour le profil';
+        });
+
+        // --- Security ---
+        passwordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const button = e.target.querySelector('button');
+            button.disabled = true;
+
+            const newPassword = document.getElementById('new-password').value;
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+            if (error) {
+                showMessage(passwordMessage, `Erreur: ${error.message}`, true);
+            } else {
+                showMessage(passwordMessage, 'Mot de passe mis à jour avec succès !');
+                passwordForm.reset();
+            }
+            button.disabled = false;
+        });
+
+        // --- Subscription & Billing ---
+        async function loadSubscription() {
+            // This is a placeholder. In a real app, you'd fetch from a 'subscriptions' table.
+            document.getElementById('current-plan').textContent = 'Pro';
+            document.getElementById('subscription-status').textContent = 'Actif';
+            
+            // Placeholder for invoices
+            const invoicesList = document.getElementById('invoices-list');
+            invoicesList.innerHTML = `
+                <tr>
+                    <td>1er Janvier 2024</td>
+                    <td>19.00€</td>
+                    <td>Payée</td>
+                    <td><a href="#" class="btn-link">Télécharger</a></td>
+                </tr>
+                 <tr>
+                    <td>1er Décembre 2023</td>
+                    <td>19.00€</td>
+                    <td>Payée</td>
+                    <td><a href="#" class="btn-link">Télécharger</a></td>
+                </tr>
+            `;
+        }
+
+        manageSubscriptionBtn.addEventListener('click', async () => {
+            // In a real app, this would call a Supabase Edge Function to create a Stripe Customer Portal session.
+            alert("Redirection vers le portail de gestion de l'abonnement...");
+            // const { data, error } = await supabase.functions.invoke('stripe-portal-link');
+            // if (error) alert(`Error: ${error.message}`);
+            // else window.location.href = data.url;
+        });
+
+        // --- API Keys ---
+        async function loadApiKeys() {
+            // Placeholder, as this requires a specific table and logic
+            document.getElementById('api-keys-list').innerHTML = `
+                <tr>
+                    <td>Clé par défaut</td>
+                    <td>sk_...xxxx</td>
+                    <td>15 Nov 2023</td>
+                    <td><button class="btn-danger-link">Révoquer</button></td>
+                </tr>
+            `;
+        }
+        
+        document.getElementById('generate-api-key-btn').addEventListener('click', () => {
+             const newKeyMessage = document.getElementById('new-api-key-message');
+             newKeyMessage.innerHTML = `
+                <strong>Nouvelle clé générée :</strong> sk_live_123456789abcdefghijklmnopqrstuvwxyz <br>
+                <small>Copiez cette clé maintenant. Vous ne pourrez pas la revoir.</small>
+             `;
+             newKeyMessage.style.display = 'block';
+        });
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await checkSessionOrRedirect();
+            if (!session) return;
+            currentUser = session.user;
+
+            displayUserInfo(session);
+            await loadProfile();
+            await loadSubscription();
+            await loadApiKeys();
+        });
+
+    </script>
+    <script type="module" src="auth-oauth.js"></script>
+</body>
+</html>
+```

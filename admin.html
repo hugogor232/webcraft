@@ -1,0 +1,141 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - WebCraft AI</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body class="private-page admin-page">
+
+    <header class="intranet-nav">
+        <div class="container">
+            <a href="admin.html" class="nav-logo">WebCraft AI [Admin]</a>
+            <nav class="nav-links">
+                <a href="dashboard.html" class="nav-link-back">← Retour au site</a>
+                <div class="user-info">
+                    <span class="user-email">Chargement...</span>
+                    <button id="logout-button" class="btn-logout">Déconnexion</button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div id="admin-content" style="display: none;">
+                <h1>Tableau de Bord Administrateur</h1>
+                <p>Métriques globales de la plateforme.</p>
+
+                <div class="stats-grid">
+                    <div class="card stat-card">
+                        <h3>MRR (Revenu Mensuel Récurrent)</h3>
+                        <p class="stat-value" id="mrr-value">Chargement...</p>
+                    </div>
+                    <div class="card stat-card">
+                        <h3>Utilisateurs Totaux</h3>
+                        <p class="stat-value" id="total-users-value">Chargement...</p>
+                    </div>
+                    <div class="card stat-card">
+                        <h3>Projets Créés</h3>
+                        <p class="stat-value" id="total-projects-value">Chargement...</p>
+                    </div>
+                </div>
+
+                <div class="admin-section card">
+                    <h2>Actions Rapides</h2>
+                    <p>Section pour les actions administratives courantes (à venir).</p>
+                </div>
+            </div>
+
+            <div id="access-denied" class="card error-card" style="display: none;">
+                <h2>Accès Refusé (403)</h2>
+                <p>Vous n'avez pas les autorisations nécessaires pour accéder à cette page. Cette zone est réservée aux administrateurs.</p>
+                <a href="dashboard.html" class="btn btn-primary">Retour au tableau de bord</a>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { checkSessionOrRedirect, displayUserInfo, handleLogout } from './auth-oauth.js';
+
+        const adminContent = document.getElementById('admin-content');
+        const accessDenied = document.getElementById('access-denied');
+        const logoutButton = document.getElementById('logout-button');
+
+        async function checkAdminRole(user) {
+            // First, check the role claim in the JWT, which is the most efficient method.
+            if (user.role === 'super_admin') {
+                return true;
+            }
+
+            // As a fallback, query the profiles table.
+            // This requires RLS policies that allow admins to read their own role.
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (error) {
+                console.error("Impossible de vérifier le rôle de l'utilisateur:", error);
+                return false;
+            }
+
+            return profile && profile.role === 'super_admin';
+        }
+
+        async function loadAdminMetrics() {
+            const mrrValueEl = document.getElementById('mrr-value');
+            const usersValueEl = document.getElementById('total-users-value');
+            const projectsValueEl = document.getElementById('total-projects-value');
+
+            try {
+                // Use Promise.all to fetch all metrics concurrently
+                const [mrrResult, usersResult, projectsResult] = await Promise.all([
+                    supabase.rpc('get_mrr'),
+                    supabase.rpc('get_total_users'),
+                    supabase.rpc('get_total_projects')
+                ]);
+
+                if (mrrResult.error) throw mrrResult.error;
+                if (usersResult.error) throw usersResult.error;
+                if (projectsResult.error) throw projectsResult.error;
+
+                // Format and display the data
+                mrrValueEl.textContent = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(mrrResult.data || 0);
+                usersValueEl.textContent = (usersResult.data || 0).toLocaleString('fr-FR');
+                projectsValueEl.textContent = (projectsResult.data || 0).toLocaleString('fr-FR');
+
+            } catch (error) {
+                console.error("Erreur lors de la récupération des métriques admin:", error);
+                mrrValueEl.textContent = 'Erreur';
+                usersValueEl.textContent = 'Erreur';
+                projectsValueEl.textContent = 'Erreur';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const session = await checkSessionOrRedirect();
+            if (!session) return; // Stop if redirection is happening
+
+            const isAdmin = await checkAdminRole(session.user);
+
+            if (isAdmin) {
+                adminContent.style.display = 'block';
+                displayUserInfo(session);
+                logoutButton.addEventListener('click', handleLogout);
+                await loadAdminMetrics();
+            } else {
+                accessDenied.style.display = 'block';
+            }
+        });
+    </script>
+    <script type="module" src="auth-oauth.js"></script>
+</body>
+</html>
+```

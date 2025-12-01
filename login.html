@@ -1,0 +1,128 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - WebCraft AI</title>
+    <meta name="description" content="Connectez-vous à votre compte WebCraft AI pour accéder à votre tableau de bord et gérer vos projets.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body class="auth-page">
+
+    <main class="auth-container">
+        <div class="card auth-card">
+            <a href="index.html" class="auth-logo">WebCraft AI</a>
+            <h2>Connexion à votre compte</h2>
+            <p>Accédez à votre tableau de bord pour créer et gérer vos sites web.</p>
+
+            <form id="login-form" novalidate>
+                <div id="error-message" class="error-message" aria-live="assertive"></div>
+                
+                <div class="form-group">
+                    <label for="email">Adresse e-mail</label>
+                    <input type="email" id="email" name="email" required autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+
+                <div class="form-options">
+                    <a href="forgot-password.html" class="forgot-password-link">Mot de passe oublié ?</a>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="login-button">Se connecter</button>
+            </form>
+
+            <div class="separator"><span>OU</span></div>
+
+            <div class="oauth-providers">
+                <button id="google-login" class="btn btn-oauth btn-google">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google logo" width="20" height="20">
+                    Continuer avec Google
+                </button>
+                <button id="github-login" class="btn btn-oauth btn-github">
+                    <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub logo" width="20" height="20">
+                    Continuer avec GitHub
+                </button>
+            </div>
+
+            <p class="auth-switch">
+                Pas encore de compte ? <a href="register.html">Inscrivez-vous gratuitement</a>
+            </p>
+        </div>
+    </main>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+
+        const loginForm = document.getElementById('login-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('error-message');
+        const googleLoginButton = document.getElementById('google-login');
+        const githubLoginButton = document.getElementById('github-login');
+        const loginButton = document.getElementById('login-button');
+
+        // 1. Rediriger si une session est déjà active
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        // 2. Gérer la connexion par email/mot de passe
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            errorMessage.textContent = '';
+            loginButton.disabled = true;
+            loginButton.textContent = 'Connexion en cours...';
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            const { error } = await supabase.auth.signInWithPassword({
+                email: email,
+                password: password,
+            });
+
+            if (error) {
+                errorMessage.textContent = 'Email ou mot de passe incorrect.';
+                console.error('Login Error:', error.message);
+            } else {
+                // La redirection sera gérée par le onAuthStateChange ou directement
+                window.location.href = 'dashboard.html';
+            }
+            
+            loginButton.disabled = false;
+            loginButton.textContent = 'Se connecter';
+        });
+
+        // 3. Gérer la connexion OAuth avec Google
+        googleLoginButton.addEventListener('click', async () => {
+            await supabase.auth.signInWithOAuth({
+                provider: 'google',
+            });
+        });
+
+        // 4. Gérer la connexion OAuth avec GitHub
+        githubLoginButton.addEventListener('click', async () => {
+            await supabase.auth.signInWithOAuth({
+                provider: 'github',
+            });
+        });
+
+        // 5. Écouter les changements d'état d'authentification (utile après redirection OAuth)
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>
+```

@@ -1,0 +1,169 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebCraft AI - Accueil & Démo Interactive</title>
+    <meta name="description" content="Créez des sites web modernes et professionnels en quelques minutes grâce à notre intelligence artificielle. Décrivez votre projet, WebCraft AI génère le code pour vous.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+
+    <header class="main-nav">
+        <div class="container">
+            <a href="index.html" class="nav-logo">WebCraft AI</a>
+            <nav class="nav-links">
+                <ul>
+                    <li><a href="how-it-works.html">Comment ça marche ?</a></li>
+                    <li><a href="#portfolio">Portfolio</a></li>
+                    <li><a href="login.html" class="nav-login">Connexion</a></li>
+                </ul>
+                <a href="register.html" class="btn btn-secondary nav-cta">S'inscrire</a>
+            </nav>
+            <button class="burger-menu" aria-label="Ouvrir le menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">Créez des sites web époustouflants avec l'IA</h1>
+                    <p class="hero-subtitle">
+                        Décrivez simplement votre projet, notre intelligence artificielle génère le code, le design et la structure. Passez de l'idée au site en ligne en un temps record.
+                    </p>
+                    <div class="hero-cta-group">
+                        <a href="register.html" class="btn btn-primary" id="main-cta">Commencer Gratuitement</a>
+                        <a href="how-it-works.html" class="btn btn-secondary">Voir la démo</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="container">
+                <h2 class="section-title">Une plateforme tout-en-un pour vos projets web</h2>
+                <div class="features-grid">
+                    <div class="card">
+                        <h3>Génération Intelligente</h3>
+                        <p>Notre IA analyse votre description pour créer une structure HTML sémantique, un style CSS moderne et même du JavaScript interactif.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Éditeur de Code Intégré</h3>
+                        <p>Affinez chaque détail. Modifiez le code généré en temps réel avec un éditeur puissant directement dans votre navigateur.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Architecture Serverless</h3>
+                        <p>Propulsé par Supabase, votre projet bénéficie d'une base de données, d'une authentification et d'un stockage sécurisés et scalables.</p>
+                    </div>
+                    <div class="card">
+                        <h3>Déploiement en un Clic</h3>
+                        <p>Publiez votre site web sur internet sans effort. Nous nous occupons de l'hébergement et de la configuration pour vous.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="portfolio" class="portfolio">
+            <div class="container">
+                <h2 class="section-title">Dernières créations de notre communauté</h2>
+                <p class="section-subtitle">Découvrez ce que nos utilisateurs ont créé avec WebCraft AI.</p>
+                <div class="portfolio-grid" id="portfolio-grid">
+                    <!-- Les projets seront injectés ici par JavaScript -->
+                    <div class="card placeholder-card"></div>
+                    <div class="card placeholder-card"></div>
+                    <div class="card placeholder-card"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="final-cta-section">
+            <div class="container">
+                <h2>Prêt à construire votre prochain site web ?</h2>
+                <p>Rejoignez des milliers de développeurs et créateurs qui utilisent WebCraft AI pour accélérer leur workflow.</p>
+                <a href="register.html" class="btn btn-primary">Lancer mon premier projet</a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-column">
+                    <h4>WebCraft AI</h4>
+                    <p>Créateur de sites web intelligent. <br>De l'idée au code, plus rapidement.</p>
+                </div>
+                <div class="footer-column">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a href="how-it-works.html">Comment ça marche ?</a></li>
+                        <li><a href="#portfolio">Portfolio</a></li>
+                        <li><a href="register.html">Créer un compte</a></li>
+                        <li><a href="login.html">Se connecter</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h4>Légal</h4>
+                    <ul>
+                        <li><a href="#">Politique de confidentialité</a></li>
+                        <li><a href="#">Conditions d'utilisation</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 WebCraft AI. Tous droits réservés.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script type="module" src="supabaseClient.js"></script>
+    <script type="module" src="auth-oauth.js"></script>
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+
+        const portfolioGrid = document.getElementById('portfolio-grid');
+
+        async function loadRecentProjects() {
+            if (!portfolioGrid) return;
+
+            const { data: projects, error } = await supabase
+                .from('projects')
+                .select('name, description, preview_url, live_url')
+                .eq('is_public', true)
+                .order('created_at', { ascending: false })
+                .limit(3);
+
+            if (error) {
+                console.error('Erreur lors de la récupération des projets:', error);
+                portfolioGrid.innerHTML = '<p class="error-message">Impossible de charger les projets pour le moment.</p>';
+                return;
+            }
+
+            if (projects && projects.length > 0) {
+                portfolioGrid.innerHTML = projects.map(project => `
+                    <div class="card project-card">
+                        <img src="${project.preview_url || 'https://via.placeholder.com/400x250.png?text=Aperçu+Indisponible'}" alt="Aperçu du projet ${project.name}" class="project-card-img">
+                        <div class="project-card-body">
+                            <h3>${project.name}</h3>
+                            <p>${project.description || 'Aucune description fournie.'}</p>
+                            <a href="${project.live_url}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Voir le site</a>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                portfolioGrid.innerHTML = '<p>Aucun projet public à afficher pour le moment.</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadRecentProjects);
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
+```

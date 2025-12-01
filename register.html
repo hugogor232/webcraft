@@ -1,0 +1,153 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - WebCraft AI</title>
+    <meta name="description" content="Créez votre compte gratuit sur WebCraft AI et commencez à générer des sites web avec l'intelligence artificielle.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body class="auth-page">
+
+    <main class="auth-container">
+        <div class="card auth-card">
+            <a href="index.html" class="auth-logo">WebCraft AI</a>
+            <h2>Créez votre compte gratuit</h2>
+            <p>Commencez à construire des sites web avec l'IA en quelques secondes.</p>
+
+            <form id="register-form" novalidate>
+                <div id="message" class="message" aria-live="polite"></div>
+                
+                <div class="form-group">
+                    <label for="email">Adresse e-mail</label>
+                    <input type="email" id="email" name="email" required autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    <input type="password" id="password" name="password" required autocomplete="new-password" minlength="8">
+                    <small>Doit contenir au moins 8 caractères.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="password-confirm">Confirmez le mot de passe</label>
+                    <input type="password" id="password-confirm" name="password-confirm" required autocomplete="new-password">
+                </div>
+
+                <div class="form-group-checkbox">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <label for="terms">J'accepte les <a href="terms.html" target="_blank">Conditions d'Utilisation</a></label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="register-button">Créer mon compte</button>
+            </form>
+
+            <div class="separator"><span>OU</span></div>
+
+            <div class="oauth-providers">
+                <button id="google-login" class="btn btn-oauth btn-google">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google logo" width="20" height="20">
+                    S'inscrire avec Google
+                </button>
+                <button id="github-login" class="btn btn-oauth btn-github">
+                    <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub logo" width="20" height="20">
+                    S'inscrire avec GitHub
+                </button>
+            </div>
+
+            <p class="auth-switch">
+                Déjà un compte ? <a href="login.html">Connectez-vous</a>
+            </p>
+        </div>
+    </main>
+
+    <script type="module">
+        import { supabase } from './supabaseClient.js';
+
+        const registerForm = document.getElementById('register-form');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const passwordConfirmInput = document.getElementById('password-confirm');
+        const termsCheckbox = document.getElementById('terms');
+        const messageDiv = document.getElementById('message');
+        const registerButton = document.getElementById('register-button');
+        const googleLoginButton = document.getElementById('google-login');
+        const githubLoginButton = document.getElementById('github-login');
+
+        // Rediriger si une session est déjà active
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        registerForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            messageDiv.textContent = '';
+            messageDiv.className = 'message';
+
+            // Validation client
+            if (passwordInput.value.length < 8) {
+                messageDiv.textContent = 'Le mot de passe doit contenir au moins 8 caractères.';
+                messageDiv.classList.add('error-message');
+                return;
+            }
+            if (passwordInput.value !== passwordConfirmInput.value) {
+                messageDiv.textContent = 'Les mots de passe ne correspondent pas.';
+                messageDiv.classList.add('error-message');
+                return;
+            }
+            if (!termsCheckbox.checked) {
+                messageDiv.textContent = 'Vous devez accepter les conditions d\'utilisation.';
+                messageDiv.classList.add('error-message');
+                return;
+            }
+
+            registerButton.disabled = true;
+            registerButton.textContent = 'Création en cours...';
+
+            const { data, error } = await supabase.auth.signUp({
+                email: emailInput.value.trim(),
+                password: passwordInput.value.trim(),
+            });
+
+            if (error) {
+                messageDiv.textContent = error.message;
+                messageDiv.classList.add('error-message');
+            } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+                // Cas où l'utilisateur existe déjà mais n'est pas confirmé
+                messageDiv.textContent = 'Un utilisateur avec cet email existe déjà. Veuillez vérifier vos emails pour le lien de confirmation.';
+                messageDiv.classList.add('info-message');
+            } else if (data.user) {
+                messageDiv.textContent = 'Inscription réussie ! Veuillez vérifier votre boîte de réception pour confirmer votre adresse e-mail.';
+                messageDiv.classList.add('success-message');
+                registerForm.reset();
+            }
+
+            registerButton.disabled = false;
+            registerButton.textContent = 'Créer mon compte';
+        });
+
+        // Gérer la connexion OAuth
+        googleLoginButton.addEventListener('click', () => {
+            supabase.auth.signInWithOAuth({ provider: 'google' });
+        });
+
+        githubLoginButton.addEventListener('click', () => {
+            supabase.auth.signInWithOAuth({ provider: 'github' });
+        });
+
+        // Écouter les changements d'état d'authentification
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+                // Redirige vers le dashboard après une connexion réussie (ex: OAuth)
+                window.location.href = 'dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>
+```
